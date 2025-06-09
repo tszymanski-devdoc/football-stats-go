@@ -31,8 +31,32 @@ jobs:
       - name: Run Tests
         run: go test -v ./...
 
+  docker:
+    runs-on: ubuntu-latest
+    needs: build
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: 1.24
+
+      - name: Download dependencies
+        run: go mod download
+
       - name: Build Docker image
         run: docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:${{ github.sha }} .
+
+  push:
+    runs-on: ubuntu-latest
+    needs: docker
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
