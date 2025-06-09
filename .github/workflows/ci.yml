@@ -24,9 +24,23 @@ jobs:
 
       - name: Lint
         run: go vet ./...
-        
+
       - name: Build
         run: go build -v ./...
 
       - name: Run Tests
         run: go test -v ./...
+
+      - name: Build Docker image
+        run: docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:${{ github.sha }} .
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for Google Cloud
+        run: gcloud auth configure-docker
+
+      - name: Push Docker image to Google Container Registry
+        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:${{ github.sha }}
