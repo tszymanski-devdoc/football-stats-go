@@ -1,8 +1,8 @@
-name: CD
+name: Football stats go CD Pipeline
 
 on:
     workflow_run:
-        workflows: ["CI"]
+        workflows: ["Football stats go CI Pipeline"]
         types:
             - completed
 
