@@ -1,0 +1,45 @@
+name: CD
+
+on:
+    workflow_run:
+        workflows: ["CI"]
+        types:
+            - completed
+
+jobs:
+    deploy:
+        if: ${{ github.event.workflow_run.conclusion == 'success' }}
+        runs-on: ubuntu-latest
+
+        steps:
+          - name: Checkout repository
+            uses: actions/checkout@v3
+
+          - name: Set up Google Cloud SDK
+            uses: google-github-actions/setup-gcloud@v2
+            with:
+              project_id: ${{ secrets.GCP_PROJECT_ID }}
+              service_account_key: ${{ secrets.GCP_SA_KEY }}
+
+          - name: Configure Docker for Google Cloud
+            run: gcloud auth configure-docker
+
+          - name: Pull image from GitHub Container Registry
+            run: |
+              docker pull ghcr.io/${{ github.repository }}:latest
+
+          - name: Tag image for Google Container Registry
+            run: |
+              docker tag ghcr.io/${{ github.repository }}:latest gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:latest
+
+          - name: Push image to Google Container Registry
+            run: |
+              docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:latest
+
+          - name: Deploy to Google Cloud Run
+            run: |
+              gcloud run deploy football-stats-go \
+                --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:latest \
+                --region ${{ secrets.GCP_REGION }} \
+                --platform managed \
+                --allow-unauthenticated
