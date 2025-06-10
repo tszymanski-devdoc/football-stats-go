@@ -24,18 +24,6 @@ jobs:
           - name: Configure Docker for Google Cloud
             run: gcloud auth configure-docker
 
-          - name: Pull image from GitHub Container Registry
-            run: |
-              docker pull ghcr.io/${{ github.repository }}:latest
-
-          - name: Tag image for Google Container Registry
-            run: |
-              docker tag ghcr.io/${{ github.repository }}:latest gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:latest
-
-          - name: Push image to Google Container Registry
-            run: |
-              docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:latest
-
           - name: Deploy to Google Cloud Run
             run: |
               gcloud run deploy football-stats-go \
