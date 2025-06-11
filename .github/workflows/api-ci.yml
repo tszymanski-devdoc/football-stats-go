@@ -22,15 +22,19 @@ jobs:
 
       - name: Download dependencies
         run: go mod download
+        working-directory: football-stats-go-api
 
       - name: Lint
         run: go vet ./...
+        working-directory: football-stats-go-api
 
       - name: Build
         run: go build -v ./...
+        working-directory: football-stats-go-api
 
       - name: Run Tests
         run: go test -v ./...
+        working-directory: football-stats-go-api
 
   docker:
     name: Build and Push Docker Image
@@ -48,6 +52,7 @@ jobs:
 
       - name: Download dependencies
         run: go mod download
+        working-directory: football-stats-go-api
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
@@ -59,11 +64,12 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:${{ github.sha }} \
-               -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:latest .
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:${{ github.sha }} \
+               -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:latest .
+        working-directory: football-stats-go-api
 
       - name: Push Docker image with commit SHA tag
-        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:${{ github.sha }}
+        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:${{ github.sha }}
 
       - name: Push Docker image with latest tag
-        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:latest
+        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:latest

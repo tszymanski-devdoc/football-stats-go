@@ -1,4 +1,4 @@
-name: Football stats go CD Pipeline
+name: Football stats go API CD Pipeline
 
 on:
     workflow_run:
@@ -25,8 +25,8 @@ jobs:
 
           - name: Deploy to Google Cloud Run
             run: |
-              gcloud run deploy football-stats-go \
-                --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go:latest \
+              gcloud run deploy football-stats-go-api \
+                --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:latest \
                 --region ${{ secrets.GCP_REGION }} \
                 --platform managed \
                 --allow-unauthenticated
