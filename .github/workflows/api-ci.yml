@@ -1,4 +1,4 @@
-name: Football stats go CI Pipeline
+name: Football stats go API CI Pipeline
 
 on:
   push:
