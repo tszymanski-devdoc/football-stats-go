@@ -2,7 +2,7 @@ name: Football stats go API CD Pipeline
 
 on:
     workflow_run:
-        workflows: ["Football stats go CI Pipeline"]
+        workflows: ["Football stats go API CI Pipeline"]
         types:
             - completed
 

@@ -1,0 +1,40 @@
+name: Football stats go UI CI Pipeline
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'football-stats-go-ui/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'football-stats-go-ui/**'
+
+jobs:
+  docker:
+    name: Build and Push Docker Image
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Configure Docker for Google Cloud
+        run: gcloud auth configure-docker
+
+      - name: Build Docker image
+        run: |
+          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:${{ github.sha }} \
+           -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:latest \
+        working-directory: football-stats-go-ui
+
+      - name: Push Docker image with commit SHA tag
+        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:${{ github.sha }}
+
+      - name: Push Docker image with latest tag
+        run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:latest

@@ -3,8 +3,12 @@ name: Football stats go API CI Pipeline
 on:
   push:
     branches: [ main ]
+    paths:
+      - 'football-stats-go-api/**'
   pull_request:
     branches: [ main ]
+    paths:
+      - 'football-stats-go-api/**'
 
 jobs:
   build:
@@ -44,15 +48,6 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v3
-
-      - name: Set up Go
-        uses: actions/setup-go@v5
-        with:
-          go-version: 1.24
-
-      - name: Download dependencies
-        run: go mod download
-        working-directory: football-stats-go-api
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
