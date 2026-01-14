@@ -1,23 +1,30 @@
-FROM golang:1.24.4-alpine AS builder
+# Build stage
+FROM golang:1.24-alpine AS builder
 
 WORKDIR /app
 
-COPY go.mod ./
+# Copy go mod files
+COPY go.mod go.sum ./
 RUN go mod download
 
+# Copy source code
 COPY . .
 
-# Build the Go app
-RUN go build -o football-stats-go main.go
+# Build the application
+RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o main ./cmd/api
 
-# Use a minimal image for running
+# Final stage
 FROM alpine:latest
+
+RUN apk --no-cache add ca-certificates
 
 WORKDIR /root/
 
-COPY --from=builder /app/football-stats-go .
+# Copy the binary from builder
+COPY --from=builder /app/main .
 
+# Cloud Run uses PORT environment variable
 EXPOSE 8080
 
-# Run the binary
-CMD ["./football-stats-go"]
+# Run the application
+CMD ["./main"]

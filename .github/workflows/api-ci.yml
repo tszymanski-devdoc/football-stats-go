@@ -5,6 +5,7 @@ on:
     branches: [ main ]
     paths:
       - 'football-stats-go-api/**'
+      - '.github/workflows/api-ci.yml'
   pull_request:
     branches: [ main ]
     paths:
@@ -17,15 +18,20 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Set up Go
         uses: actions/setup-go@v5
         with:
-          go-version: 1.24
+          go-version: '1.24'
+          cache-dependency-path: football-stats-go-api/go.sum
 
       - name: Download dependencies
         run: go mod download
+        working-directory: football-stats-go-api
+
+      - name: Verify dependencies
+        run: go mod verify
         working-directory: football-stats-go-api
 
       - name: Lint
@@ -33,38 +39,52 @@ jobs:
         working-directory: football-stats-go-api
 
       - name: Build
-        run: go build -v ./...
+        run: go build -v ./cmd/api
         working-directory: football-stats-go-api
 
       - name: Run Tests
-        run: go test -v ./...
+        run: go test -v -race -coverprofile=coverage.out ./...
         working-directory: football-stats-go-api
+
+      - name: Upload coverage
+        uses: codecov/codecov-action@v4
+        if: always()
+        with:
+          files: ./football-stats-go-api/coverage.out
+          flags: unittests
+          name: codecov-umbrella
+          fail_ci_if_error: false
 
   docker:
     name: Build and Push Docker Image
     runs-on: ubuntu-latest
     needs: build
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Configure Docker for Google Cloud
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for GCR
         run: gcloud auth configure-docker
 
       - name: Build Docker image
         run: |
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:${{ github.sha }} \
-               -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:latest .
+               -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:latest \
+               -f Dockerfile .
         working-directory: football-stats-go-api
 
-      - name: Push Docker image with commit SHA tag
+      - name: Push Docker image (SHA)
         run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:${{ github.sha }}
 
-      - name: Push Docker image with latest tag
+      - name: Push Docker image (latest)
         run: docker push gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:latest

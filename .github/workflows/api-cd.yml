@@ -1,32 +1,71 @@
 name: Football stats go API CD Pipeline
 
 on:
-    workflow_run:
-        workflows: ["Football stats go API CI Pipeline"]
-        types:
-            - completed
+  workflow_run:
+    workflows: ["Football stats go API CI Pipeline"]
+    types:
+      - completed
+    branches:
+      - main
 
 jobs:
-    deploy:
-        if: ${{ github.event.workflow_run.conclusion == 'success' }}
-        runs-on: ubuntu-latest
+  deploy:
+    name: Deploy to Cloud Run
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
 
-        steps:
-          - name: Checkout repository
-            uses: actions/checkout@v3
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-          - name: Authenticate to Google Cloud
-            uses: google-github-actions/auth@v2
-            with:
-              credentials_json: ${{ secrets.GCP_SA_KEY }}
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-          - name: Configure Docker for Google Cloud
-            run: gcloud auth configure-docker
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
 
-          - name: Deploy to Google Cloud Run
-            run: |
-              gcloud run deploy football-stats-go-api \
-                --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:latest \
-                --region ${{ secrets.GCP_REGION }} \
-                --platform managed \
-                --allow-unauthenticated
+      - name: Deploy to Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy football-stats-go-api \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:latest \
+            --region ${{ secrets.GCP_REGION || 'us-central1' }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 512Mi \
+            --cpu 1 \
+            --max-instances 10 \
+            --min-instances 0 \
+            --timeout 300 \
+            --port 8080 \
+            --set-env-vars "APP_ENV=production,APP_NAME=football-stats-api" \
+            --quiet
+
+      - name: Get Service URL
+        run: |
+          SERVICE_URL=$(gcloud run services describe football-stats-go-api \
+            --region ${{ secrets.GCP_REGION || 'us-central1' }} \
+            --format 'value(status.url)')
+          echo "Service deployed to: $SERVICE_URL"
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_ENV
+
+      - name: Test deployment
+        run: |
+          echo "Testing health endpoint..."
+          curl -f ${{ env.SERVICE_URL }}/health || exit 1
+          echo "✅ Deployment successful!"
+
+      - name: Create deployment summary
+        run: |
+          echo "## 🚀 Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: football-stats-go-api" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: ${{ secrets.GCP_REGION || 'us-central1' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${{ env.SERVICE_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Image**: gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-api:latest" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Test Endpoints" >> $GITHUB_STEP_SUMMARY
+          echo "- Health: [${{ env.SERVICE_URL }}/health](${{ env.SERVICE_URL }}/health)" >> $GITHUB_STEP_SUMMARY
+          echo "- API Root: [${{ env.SERVICE_URL }}/api/v1](${{ env.SERVICE_URL }}/api/v1)" >> $GITHUB_STEP_SUMMARY
