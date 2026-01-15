@@ -29,8 +29,10 @@ jobs:
 
       - name: Build Docker image
         run: |
-          docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:${{ github.sha }} \
-           -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:latest .
+          docker build \
+            --build-arg REACT_APP_API_URL=https://football-stats-go-api-85662226520.europe-west1.run.app \
+            -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:${{ github.sha }} \
+            -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:latest .
         working-directory: football-stats-go-ui
 
       - name: Push Docker image with commit SHA tag
