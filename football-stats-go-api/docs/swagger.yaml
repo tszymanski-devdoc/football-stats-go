@@ -1,0 +1,167 @@
+definitions:
+  example_hello_internal_domain.MatchData:
+    properties:
+      away_score:
+        type: integer
+      away_team:
+        type: string
+      home_score:
+        type: integer
+      home_team:
+        type: string
+      id:
+        type: string
+      league:
+        type: string
+      match_date:
+        type: string
+      season:
+        type: string
+    type: object
+  example_hello_internal_domain.MatchPrediction:
+    properties:
+      away_team:
+        type: string
+      away_win_probability:
+        type: number
+      confidence:
+        type: number
+      draw_probability:
+        type: number
+      home_team:
+        type: string
+      home_win_probability:
+        type: number
+      predicted_score:
+        type: string
+    type: object
+  example_hello_internal_domain.TeamStats:
+    properties:
+      avg_goals_conceded:
+        type: number
+      avg_goals_scored:
+        type: number
+      draws:
+        type: integer
+      goals_against:
+        type: integer
+      goals_for:
+        type: integer
+      losses:
+        type: integer
+      matches_played:
+        type: integer
+      team_name:
+        type: string
+      win_percentage:
+        type: number
+      wins:
+        type: integer
+    type: object
+  internal_api.AnalyzeTeamRequest:
+    properties:
+      matches:
+        items:
+          $ref: '#/definitions/example_hello_internal_domain.MatchData'
+        type: array
+      team_name:
+        type: string
+    type: object
+  internal_api.PredictMatchRequest:
+    properties:
+      away_matches:
+        items:
+          $ref: '#/definitions/example_hello_internal_domain.MatchData'
+        type: array
+      away_team:
+        type: string
+      home_matches:
+        items:
+          $ref: '#/definitions/example_hello_internal_domain.MatchData'
+        type: array
+      home_team:
+        type: string
+    type: object
+  internal_api.Response:
+    properties:
+      data: {}
+      error:
+        type: string
+      success:
+        type: boolean
+    type: object
+info:
+  contact: {}
+paths:
+  /analyze-team:
+    post:
+      consumes:
+      - application/json
+      description: Calculate comprehensive statistics for a team based on match data
+      parameters:
+      - description: Team analysis request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.AnalyzeTeamRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Team statistics
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_api.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/example_hello_internal_domain.TeamStats'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_api.Response'
+        "405":
+          description: Method not allowed
+          schema:
+            $ref: '#/definitions/internal_api.Response'
+      summary: Analyze team statistics
+      tags:
+      - analysis
+  /predict-match:
+    post:
+      consumes:
+      - application/json
+      description: Predict the outcome of a match based on team statistics using Poisson
+        distribution
+      parameters:
+      - description: Match prediction request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_api.PredictMatchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Match prediction
+          schema:
+            allOf:
+            - $ref: '#/definitions/internal_api.Response'
+            - properties:
+                data:
+                  $ref: '#/definitions/example_hello_internal_domain.MatchPrediction'
+              type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_api.Response'
+        "405":
+          description: Method not allowed
+          schema:
+            $ref: '#/definitions/internal_api.Response'
+      summary: Predict match outcome
+      tags:
+      - prediction
+swagger: "2.0"

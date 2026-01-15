@@ -1,0 +1,265 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "contact": {}
+    },
+    "paths": {
+        "/analyze-team": {
+            "post": {
+                "description": "Calculate comprehensive statistics for a team based on match data",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "analysis"
+                ],
+                "summary": "Analyze team statistics",
+                "parameters": [
+                    {
+                        "description": "Team analysis request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.AnalyzeTeamRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Team statistics",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/internal_api.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/example_hello_internal_domain.TeamStats"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.Response"
+                        }
+                    },
+                    "405": {
+                        "description": "Method not allowed",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.Response"
+                        }
+                    }
+                }
+            }
+        },
+        "/predict-match": {
+            "post": {
+                "description": "Predict the outcome of a match based on team statistics using Poisson distribution",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "prediction"
+                ],
+                "summary": "Predict match outcome",
+                "parameters": [
+                    {
+                        "description": "Match prediction request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.PredictMatchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Match prediction",
+                        "schema": {
+                            "allOf": [
+                                {
+                                    "$ref": "#/definitions/internal_api.Response"
+                                },
+                                {
+                                    "type": "object",
+                                    "properties": {
+                                        "data": {
+                                            "$ref": "#/definitions/example_hello_internal_domain.MatchPrediction"
+                                        }
+                                    }
+                                }
+                            ]
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.Response"
+                        }
+                    },
+                    "405": {
+                        "description": "Method not allowed",
+                        "schema": {
+                            "$ref": "#/definitions/internal_api.Response"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "example_hello_internal_domain.MatchData": {
+            "type": "object",
+            "properties": {
+                "away_score": {
+                    "type": "integer"
+                },
+                "away_team": {
+                    "type": "string"
+                },
+                "home_score": {
+                    "type": "integer"
+                },
+                "home_team": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "league": {
+                    "type": "string"
+                },
+                "match_date": {
+                    "type": "string"
+                },
+                "season": {
+                    "type": "string"
+                }
+            }
+        },
+        "example_hello_internal_domain.MatchPrediction": {
+            "type": "object",
+            "properties": {
+                "away_team": {
+                    "type": "string"
+                },
+                "away_win_probability": {
+                    "type": "number"
+                },
+                "confidence": {
+                    "type": "number"
+                },
+                "draw_probability": {
+                    "type": "number"
+                },
+                "home_team": {
+                    "type": "string"
+                },
+                "home_win_probability": {
+                    "type": "number"
+                },
+                "predicted_score": {
+                    "type": "string"
+                }
+            }
+        },
+        "example_hello_internal_domain.TeamStats": {
+            "type": "object",
+            "properties": {
+                "avg_goals_conceded": {
+                    "type": "number"
+                },
+                "avg_goals_scored": {
+                    "type": "number"
+                },
+                "draws": {
+                    "type": "integer"
+                },
+                "goals_against": {
+                    "type": "integer"
+                },
+                "goals_for": {
+                    "type": "integer"
+                },
+                "losses": {
+                    "type": "integer"
+                },
+                "matches_played": {
+                    "type": "integer"
+                },
+                "team_name": {
+                    "type": "string"
+                },
+                "win_percentage": {
+                    "type": "number"
+                },
+                "wins": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_api.AnalyzeTeamRequest": {
+            "type": "object",
+            "properties": {
+                "matches": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/example_hello_internal_domain.MatchData"
+                    }
+                },
+                "team_name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.PredictMatchRequest": {
+            "type": "object",
+            "properties": {
+                "away_matches": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/example_hello_internal_domain.MatchData"
+                    }
+                },
+                "away_team": {
+                    "type": "string"
+                },
+                "home_matches": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/example_hello_internal_domain.MatchData"
+                    }
+                },
+                "home_team": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_api.Response": {
+            "type": "object",
+            "properties": {
+                "data": {},
+                "error": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        }
+    }
+}
