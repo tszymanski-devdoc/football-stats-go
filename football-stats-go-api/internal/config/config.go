@@ -12,7 +12,6 @@ type Config struct {
 	App       AppConfig
 	Server    ServerConfig
 	Database  DatabaseConfig
-	Redis     RedisConfig
 	Ingestion IngestionConfig
 	Analytics AnalyticsConfig
 }
@@ -46,14 +45,6 @@ type DatabaseConfig struct {
 	MaxOpenConns    int
 	MaxIdleConns    int
 	ConnMaxLifetime time.Duration
-}
-
-// RedisConfig holds Redis settings
-type RedisConfig struct {
-	Host     string
-	Port     string
-	Password string
-	DB       int
 }
 
 // IngestionConfig holds football data ingestion settings
@@ -97,12 +88,6 @@ func Load() *Config {
 			MaxOpenConns:    getEnvAsInt("DB_MAX_OPEN_CONNS", 25),
 			MaxIdleConns:    getEnvAsInt("DB_MAX_IDLE_CONNS", 25),
 			ConnMaxLifetime: getDuration("DB_CONN_MAX_LIFETIME", 30*time.Minute),
-		},
-		Redis: RedisConfig{
-			Host:     getEnv("REDIS_HOST", "localhost"),
-			Port:     getEnv("REDIS_PORT", "6379"),
-			Password: getEnv("REDIS_PASSWORD", ""),
-			DB:       getEnvAsInt("REDIS_DB", 0),
 		},
 		Ingestion: IngestionConfig{
 			Provider:       getEnv("INGESTION_PROVIDER", "football-data"),
