@@ -43,6 +43,14 @@ jobs:
             --set-env-vars "APP_ENV=production,APP_NAME=football-stats-api" \
             --quiet
 
+      - name: Ensure public access
+        run: |
+          gcloud run services add-iam-policy-binding football-stats-go-api \
+            --region ${{ secrets.GCP_REGION || 'us-central1' }} \
+            --member="allUsers" \
+            --role="roles/run.invoker" \
+            --quiet
+
       - name: Get Service URL
         run: |
           SERVICE_URL=$(gcloud run services describe football-stats-go-api \
@@ -51,11 +59,22 @@ jobs:
           echo "Service deployed to: $SERVICE_URL"
           echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_ENV
 
+      - name: Wait for service to be ready
+        run: sleep 10
+
       - name: Test deployment
         run: |
           echo "Testing health endpoint..."
-          curl -f ${{ env.SERVICE_URL }}/health || exit 1
-          echo "✅ Deployment successful!"
+          for i in {1..5}; do
+            if curl -f -s ${{ env.SERVICE_URL }}/health > /dev/null; then
+              echo "✅ Deployment successful!"
+              exit 0
+            fi
+            echo "Attempt $i failed, retrying in 5 seconds..."
+            sleep 5
+          done
+          echo "❌ Health check failed after 5 attempts"
+          exit 1
 
       - name: Create deployment summary
         run: |
