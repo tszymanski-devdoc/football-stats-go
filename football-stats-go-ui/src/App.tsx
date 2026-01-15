@@ -40,11 +40,11 @@ function App() {
             <h1>Welcome to Football Stats</h1>
             <p>Analyze team performance and predict match outcomes using advanced statistics.</p>
             <div className="features">
-              <div className="feature-card">
+              <div className="feature-card" onClick={() => setActiveView('analyze')} style={{ cursor: 'pointer' }}>
                 <h3>📊 Team Analysis</h3>
                 <p>Get comprehensive statistics including win rate, goals, and performance metrics.</p>
               </div>
-              <div className="feature-card">
+              <div className="feature-card" onClick={() => setActiveView('predict')} style={{ cursor: 'pointer' }}>
                 <h3>🎯 Match Prediction</h3>
                 <p>Predict match outcomes using Poisson distribution and historical data.</p>
               </div>
