@@ -9,6 +9,9 @@ import (
 	"os/signal"
 	"syscall"
 
+	httpSwagger "github.com/swaggo/http-swagger"
+
+	_ "example/hello/docs" // Import generated docs
 	"example/hello/internal/analysis"
 	"example/hello/internal/api"
 	"example/hello/internal/config"
@@ -33,6 +36,9 @@ func main() {
 	mux.HandleFunc("/api/predict-match", apiHandler.PredictMatch)
 	mux.HandleFunc("/api/head-to-head", apiHandler.HeadToHead)
 
+	// Swagger UI
+	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler)
+
 	// Apply middleware
 	handler := api.LoggingMiddleware(api.CORSMiddleware(mux))
 
@@ -51,6 +57,7 @@ func main() {
 		log.Printf("Server listening on %s", addr)
 		log.Println("Available endpoints:")
 		log.Println("  POST /api/analyze-team     - Analyze team statistics")
+		log.Printf("  GET  /swagger/             - Swagger UI (http://%s/swagger/)\n", addr)
 		log.Println("  POST /api/predict-match    - Predict match outcome")
 		log.Println("  POST /api/head-to-head     - Head-to-head analysis")
 		log.Println("  GET  /health               - Health check")
