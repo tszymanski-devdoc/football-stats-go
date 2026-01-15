@@ -11,7 +11,6 @@ import (
 
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	_ "example/hello/docs" // Import generated docs
 	"example/hello/internal/analysis"
 	"example/hello/internal/api"
 	"example/hello/internal/config"
