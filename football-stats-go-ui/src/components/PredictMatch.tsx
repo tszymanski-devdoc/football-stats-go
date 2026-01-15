@@ -19,7 +19,7 @@ function PredictMatch() {
     "away_team": "Chelsea",
     "home_score": 2,
     "away_score": 1,
-    "match_date": "2024-01-15",
+    "match_date": "2024-01-15T15:00:00Z",
     "league": "Premier League",
     "season": "2023-24"
   }
@@ -32,7 +32,7 @@ function PredictMatch() {
     "away_team": "Liverpool",
     "home_score": 1,
     "away_score": 2,
-    "match_date": "2024-01-20",
+    "match_date": "2024-01-20T15:00:00Z",
     "league": "Premier League",
     "season": "2023-24"
   }
