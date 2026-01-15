@@ -8,21 +8,6 @@ import (
 	"example/hello/internal/domain"
 )
 
-// @title Football Stats Analysis API
-// @version 1.0
-// @description A lightweight API for analyzing football data and predicting match outcomes
-// @termsOfService http://swagger.io/terms/
-
-// @contact.name API Support
-// @contact.email support@footballstats.com
-
-// @license.name MIT
-// @license.url https://opensource.org/licenses/MIT
-
-// @host localhost:8080
-// @BasePath /api
-// @schemes http https
-
 // Handler handles HTTP requests for the analysis API
 type Handler struct {
 	analysisService *analysis.Service

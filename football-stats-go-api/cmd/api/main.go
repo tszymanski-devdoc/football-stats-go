@@ -14,7 +14,24 @@ import (
 	"example/hello/internal/analysis"
 	"example/hello/internal/api"
 	"example/hello/internal/config"
+
+	_ "example/hello/docs"
 )
+
+// @title Football Stats Analysis API
+// @version 1.0
+// @description A lightweight API for analyzing football data and predicting match outcomes
+// @termsOfService http://swagger.io/terms/
+
+// @contact.name API Support
+// @contact.email support@footballstats.com
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:8080
+// @BasePath /api
+// @schemes http https
 
 func main() {
 	// Load configuration

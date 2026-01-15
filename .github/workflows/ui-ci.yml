@@ -30,7 +30,7 @@ jobs:
       - name: Build Docker image
         run: |
           docker build -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:${{ github.sha }} \
-           -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:latest \
+           -t gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:latest .
         working-directory: football-stats-go-ui
 
       - name: Push Docker image with commit SHA tag

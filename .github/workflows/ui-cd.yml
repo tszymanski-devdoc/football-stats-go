@@ -1,0 +1,78 @@
+name: Football stats go UI CD Pipeline
+
+on:
+  workflow_run:
+    workflows: ["Football stats go UI CI Pipeline"]
+    types:
+      - completed
+    branches:
+      - main
+
+jobs:
+  deploy:
+    name: Deploy to Cloud Run
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        id: deploy
+        run: |
+          gcloud run deploy football-stats-go-ui \
+            --image gcr.io/${{ secrets.GCP_PROJECT_ID }}/football-stats-go-ui:latest \
+            --region ${{ secrets.GCP_REGION || 'us-central1' }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --memory 256Mi \
+            --cpu 1 \
+            --max-instances 5 \
+            --min-instances 0 \
+            --timeout 60 \
+            --port 80 \
+            --quiet
+
+      - name: Get Service URL
+        run: |
+          SERVICE_URL=$(gcloud run services describe football-stats-go-ui \
+            --region ${{ secrets.GCP_REGION || 'us-central1' }} \
+            --format 'value(status.url)')
+          echo "Service deployed to: $SERVICE_URL"
+          echo "SERVICE_URL=$SERVICE_URL" >> $GITHUB_ENV
+
+      - name: Wait for service to be ready
+        run: sleep 10
+
+      - name: Test deployment
+        run: |
+          echo "Testing UI endpoint..."
+          for i in {1..5}; do
+            HTTP_STATUS=$(curl -s -o /dev/null -w "%{http_code}" ${{ env.SERVICE_URL }})
+            if [ "$HTTP_STATUS" == "200" ]; then
+              echo "✓ UI is accessible (HTTP $HTTP_STATUS)"
+              exit 0
+            fi
+            echo "Attempt $i: HTTP $HTTP_STATUS - Retrying in 5s..."
+            sleep 5
+          done
+          echo "✗ UI deployment verification failed"
+          exit 1
+
+      - name: Deployment Summary
+        if: always()
+        run: |
+          echo "### Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Service**: football-stats-go-ui" >> $GITHUB_STEP_SUMMARY
+          echo "- **Region**: ${{ secrets.GCP_REGION || 'us-central1' }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **URL**: ${{ env.SERVICE_URL }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY

@@ -1,3 +1,4 @@
+basePath: /api
 definitions:
   example_hello_internal_domain.MatchData:
     properties:
@@ -90,8 +91,19 @@ definitions:
       success:
         type: boolean
     type: object
+host: localhost:8080
 info:
-  contact: {}
+  contact:
+    email: support@footballstats.com
+    name: API Support
+  description: A lightweight API for analyzing football data and predicting match
+    outcomes
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: http://swagger.io/terms/
+  title: Football Stats Analysis API
+  version: "1.0"
 paths:
   /analyze-team:
     post:
@@ -164,4 +176,7 @@ paths:
       summary: Predict match outcome
       tags:
       - prediction
+schemes:
+- http
+- https
 swagger: "2.0"
