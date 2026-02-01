@@ -2,21 +2,24 @@ package api
 
 import (
 	"encoding/json"
+	"fmt"
 	"net/http"
 
-	"example/hello/internal/analysis"
-	"example/hello/internal/domain"
+	"example/hello/internal/database"
+	"example/hello/internal/scraper"
 )
 
-// Handler handles HTTP requests for the analysis API
+// Handler handles HTTP requests for the scraper API
 type Handler struct {
-	analysisService *analysis.Service
+	scraperService  *scraper.Service
+	databaseService *database.Service
 }
 
 // NewHandler creates a new API handler
-func NewHandler(analysisService *analysis.Service) *Handler {
+func NewHandler(scraperService *scraper.Service, databaseService *database.Service) *Handler {
 	return &Handler{
-		analysisService: analysisService,
+		scraperService:  scraperService,
+		databaseService: databaseService,
 	}
 }
 
@@ -27,137 +30,101 @@ type Response struct {
 	Error   string      `json:"error,omitempty"`
 }
 
-// AnalyzeTeamRequest represents a request to analyze team statistics
-type AnalyzeTeamRequest struct {
-	TeamName string             `json:"team_name"`
-	Matches  []domain.MatchData `json:"matches"`
+// ScrapeRequest represents a request to scrape a website
+type ScrapeRequest struct {
+	URL string `json:"url"`
 }
 
-// PredictMatchRequest represents a request to predict a match
-type PredictMatchRequest struct {
-	HomeTeam    string             `json:"home_team"`
-	AwayTeam    string             `json:"away_team"`
-	HomeMatches []domain.MatchData `json:"home_matches"`
-	AwayMatches []domain.MatchData `json:"away_matches"`
-}
-
-// HeadToHeadRequest represents a request for head-to-head analysis
-type HeadToHeadRequest struct {
-	Team1   string             `json:"team1"`
-	Team2   string             `json:"team2"`
-	Matches []domain.MatchData `json:"matches"`
-}
-
-// AnalyzeTeam analyzes team statistics
-// @Summary Analyze team statistics
-// @Description Calculate comprehensive statistics for a team based on match data
-// @Tags analysis
+// ScrapeXGStats scrapes xG shot map data from xgstat.com
+// @Summary Scrape xG shot map data
+// @Description Scrape xG statistics and shot map data from xgstat.com
+// @Tags scraper
 // @Accept json
 // @Produce json
-// @Param request body AnalyzeTeamRequest true "Team analysis request"
-// @Success 200 {object} Response{data=domain.TeamStats} "Team statistics"
+// @Param request body ScrapeRequest true "Scrape request with xgstat.com URL"
+// @Success 200 {object} Response{data=example_hello_internal_domain.DBXGStatFixture} "Scraped xG statistics and shot map data"
 // @Failure 400 {object} Response "Invalid request"
 // @Failure 405 {object} Response "Method not allowed"
-// @Router /analyze-team [post]
-func (h *Handler) AnalyzeTeam(w http.ResponseWriter, r *http.Request) {
+// @Router /scrape/xgstats [post]
+func (h *Handler) ScrapeXGStats(w http.ResponseWriter, r *http.Request) {
 	if r.Method != http.MethodPost {
 		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	var req AnalyzeTeamRequest
+	var req ScrapeRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		writeError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	if req.TeamName == "" {
-		writeError(w, http.StatusBadRequest, "team_name is required")
+	if req.URL == "" {
+		writeError(w, http.StatusBadRequest, "URL is required")
 		return
 	}
 
-	stats := h.analysisService.CalculateTeamStats(req.TeamName, req.Matches)
-	writeSuccess(w, stats)
+	data, err := h.scraperService.ScrapeXGStatFixture(req.URL)
+	if err != nil {
+		writeError(w, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// Save to database
+	if err := h.databaseService.SaveXGStatFixture(data); err != nil {
+		writeError(w, http.StatusInternalServerError, "Failed to save data: "+err.Error())
+		return
+	}
+
+	writeSuccess(w, data)
 }
 
-// PredictMatch predicts match outcome
-// @Summary Predict match outcome
-// @Description Predict the outcome of a match based on team statistics using Poisson distribution
-// @Tags prediction
+// GetXGStatFixture retrieves a saved fixture by ID
+// @Summary Get xG statistics by fixture ID
+// @Description Retrieve saved xG statistics and shot map data from the database
+// @Tags scraper
 // @Accept json
 // @Produce json
-// @Param request body PredictMatchRequest true "Match prediction request"
-// @Success 200 {object} Response{data=domain.MatchPrediction} "Match prediction"
+// @Param id query int true "Fixture ID"
+// @Success 200 {object} Response{data=example_hello_internal_domain.DBXGStatFixture} "Retrieved xG statistics"
 // @Failure 400 {object} Response "Invalid request"
-// @Failure 405 {object} Response "Method not allowed"
-// @Router /predict-match [post]
-func (h *Handler) PredictMatch(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
+// @Failure 404 {object} Response "Fixture not found"
+// @Router /xgstats [get]
+func (h *Handler) GetXGStatFixture(w http.ResponseWriter, r *http.Request) {
+	if r.Method != http.MethodGet {
 		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
 		return
 	}
 
-	var req PredictMatchRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+	fixtureIDStr := r.URL.Query().Get("id")
+	if fixtureIDStr == "" {
+		writeError(w, http.StatusBadRequest, "Fixture ID is required")
 		return
 	}
 
-	if req.HomeTeam == "" || req.AwayTeam == "" {
-		writeError(w, http.StatusBadRequest, "home_team and away_team are required")
-		return
-		// @Summary Head-to-head analysis
-		// @Description Analyze historical matchups between two teams
-		// @Tags analysis
-		// @Accept json
-		// @Produce json
-		// @Param request body HeadToHeadRequest true "Head-to-head request"
-		// @Success 200 {object} Response{data=domain.HeadToHeadStats} "Head-to-head statistics"
-		// @Failure 400 {object} Response "Invalid request"
-		// @Failure 405 {object} Response "Method not allowed"
-		// @Router /head-to-head [post]
-	}
-
-	homeStats := h.analysisService.CalculateTeamStats(req.HomeTeam, req.HomeMatches)
-	awayStats := h.analysisService.CalculateTeamStats(req.AwayTeam, req.AwayMatches)
-
-	prediction := h.analysisService.PredictMatch(homeStats, awayStats)
-	writeSuccess(w, prediction)
-}
-
-// HeadToHead analyzes head-to-head statistics
-func (h *Handler) HeadToHead(w http.ResponseWriter, r *http.Request) {
-	if r.Method != http.MethodPost {
-		writeError(w, http.StatusMethodNotAllowed, "Method not allowed")
+	var fixtureID int
+	if _, err := fmt.Sscanf(fixtureIDStr, "%d", &fixtureID); err != nil {
+		writeError(w, http.StatusBadRequest, "Invalid fixture ID")
 		return
 	}
 
-	var req HeadToHeadRequest
-	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		writeError(w, http.StatusBadRequest, "Invalid request body")
+	data, err := h.databaseService.GetFixtureByID(fixtureID)
+	if err != nil {
+		if err.Error() == "fixture not found" {
+			writeError(w, http.StatusNotFound, "Fixture not found")
+		} else {
+			writeError(w, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 
-	// @Summary Health check
-	// @Description Returns the health status of the API
-	// @Tags system
-	// @Produce json
-	// @Success 200 {object} Response{data=map[string]string} "Health status"
-	// @Router /health [get]
-	if req.Team1 == "" || req.Team2 == "" {
-		writeError(w, http.StatusBadRequest, "team1 and team2 are required")
-		return
-	}
-
-	stats := h.analysisService.AnalyzeHeadToHead(req.Team1, req.Team2, req.Matches)
-	writeSuccess(w, stats)
+	writeSuccess(w, data)
 }
 
 // Health returns the health status
 func (h *Handler) Health(w http.ResponseWriter, r *http.Request) {
 	writeSuccess(w, map[string]string{
 		"status":  "healthy",
-		"service": "football-analysis-api",
+		"service": "football-scraper-api",
 	})
 }
 

@@ -9,18 +9,20 @@ import (
 	"os/signal"
 	"syscall"
 
+	"github.com/joho/godotenv"
 	httpSwagger "github.com/swaggo/http-swagger"
 
-	"example/hello/internal/analysis"
 	"example/hello/internal/api"
 	"example/hello/internal/config"
+	"example/hello/internal/database"
+	"example/hello/internal/scraper"
 
 	_ "example/hello/docs"
 )
 
-// @title Football Stats Analysis API
+// @title Football Stats Scraper API
 // @version 1.0
-// @description A lightweight API for analyzing football data and predicting match outcomes
+// @description A lightweight API for scraping football data from websites
 // @termsOfService http://swagger.io/terms/
 
 // @contact.name API Support
@@ -34,23 +36,33 @@ import (
 // @schemes http https
 
 func main() {
+	// Load .env file if it exists (ignore error if not found)
+	_ = godotenv.Load()
+
 	// Load configuration
 	cfg := config.Load()
 
 	log.Printf("Starting %s v%s in %s environment", cfg.App.Name, cfg.App.Version, cfg.App.Environment)
 
-	// Initialize analysis service
-	analysisService := analysis.NewService()
+	// Initialize database service
+	dbService, err := database.NewService(cfg)
+	if err != nil {
+		log.Fatalf("Failed to initialize database: %v", err)
+	}
+	defer dbService.Close()
+	log.Println("Database connection established")
+
+	// Initialize scraper service
+	scraperService := scraper.NewService()
 
 	// Setup API handler
-	apiHandler := api.NewHandler(analysisService)
+	apiHandler := api.NewHandler(scraperService, dbService)
 
 	// Setup HTTP router
 	mux := http.NewServeMux()
 	mux.HandleFunc("/health", apiHandler.Health)
-	mux.HandleFunc("/api/analyze-team", apiHandler.AnalyzeTeam)
-	mux.HandleFunc("/api/predict-match", apiHandler.PredictMatch)
-	mux.HandleFunc("/api/head-to-head", apiHandler.HeadToHead)
+	mux.HandleFunc("/api/scrape/xgstats", apiHandler.ScrapeXGStats)
+	mux.HandleFunc("/api/xgstats", apiHandler.GetXGStatFixture)
 
 	// Swagger UI
 	mux.HandleFunc("/swagger/", httpSwagger.WrapHandler)
@@ -72,11 +84,10 @@ func main() {
 	go func() {
 		log.Printf("Server listening on %s", addr)
 		log.Println("Available endpoints:")
-		log.Println("  POST /api/analyze-team     - Analyze team statistics")
-		log.Printf("  GET  /swagger/             - Swagger UI (http://%s/swagger/)\n", addr)
-		log.Println("  POST /api/predict-match    - Predict match outcome")
-		log.Println("  POST /api/head-to-head     - Head-to-head analysis")
+		log.Println("  POST /api/scrape/xgstats   - Scrape xG shot map data from xgstat.com")
+		log.Println("  GET  /api/xgstats?id=XXX   - Get saved xG statistics by fixture ID")
 		log.Println("  GET  /health               - Health check")
+		log.Printf("  GET  /swagger/             - Swagger UI (http://%s/swagger/)\n", addr)
 
 		if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Server failed to start: %v", err)

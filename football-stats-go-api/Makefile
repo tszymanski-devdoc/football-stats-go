@@ -23,9 +23,17 @@ deps:
 	go mod download
 	go mod tidy
 
+# Run database migrations (up)
+migrate-up:
+	go run cmd/migrate/main.go -direction up
+
+# Rollback database migrations (down)
+migrate-down:
+	go run cmd/migrate/main.go -direction down
+
 # Clean generated files
 clean:
 	rm -rf docs/
 	rm -rf bin/
 
-.PHONY: install-swag swagger run build test deps clean
+.PHONY: install-swag swagger run build test deps migrate-up migrate-down clean

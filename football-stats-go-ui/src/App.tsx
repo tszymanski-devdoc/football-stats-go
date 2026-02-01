@@ -1,12 +1,11 @@
 import React, { useState } from 'react';
 import './App.css';
-import AnalyzeTeam from './components/AnalyzeTeam';
-import PredictMatch from './components/PredictMatch';
+import XGStats from './components/XGStats';
 
-type ViewType = 'home' | 'analyze' | 'predict';
+type ViewType = 'home' | 'xgstats';
 
 function App() {
-  const [activeView, setActiveView] = useState<ViewType>('home');
+  const [activeView, setActiveView] = useState<ViewType>('xgstats');
 
   return (
     <div className="App">
@@ -20,16 +19,10 @@ function App() {
             Home
           </button>
           <button 
-            className={activeView === 'analyze' ? 'active' : ''} 
-            onClick={() => setActiveView('analyze')}
+            className={activeView === 'xgstats' ? 'active' : ''} 
+            onClick={() => setActiveView('xgstats')}
           >
-            Analyze Team
-          </button>
-          <button 
-            className={activeView === 'predict' ? 'active' : ''} 
-            onClick={() => setActiveView('predict')}
-          >
-            Predict Match
+            xG Stats
           </button>
         </div>
       </nav>
@@ -38,25 +31,19 @@ function App() {
         {activeView === 'home' && (
           <div className="home">
             <h1>Welcome to Football Stats</h1>
-            <p>Analyze team performance and predict match outcomes using advanced statistics.</p>
+            <p>View and analyze xG (expected goals) statistics from Premier League matches.</p>
             <div className="features">
-              <div className="feature-card" onClick={() => setActiveView('analyze')} style={{ cursor: 'pointer' }}>
-                <h3>📊 Team Analysis</h3>
-                <p>Get comprehensive statistics including win rate, goals, and performance metrics.</p>
-              </div>
-              <div className="feature-card" onClick={() => setActiveView('predict')} style={{ cursor: 'pointer' }}>
-                <h3>🎯 Match Prediction</h3>
-                <p>Predict match outcomes using Poisson distribution and historical data.</p>
+              <div className="feature-card" onClick={() => setActiveView('xgstats')} style={{ cursor: 'pointer' }}>
+                <h3>📊 xG Statistics</h3>
+                <p>Interactive shot maps and xG analysis for football matches.</p>
               </div>
             </div>
           </div>
         )}
-        {activeView === 'analyze' && <AnalyzeTeam />}
-        {activeView === 'predict' && <PredictMatch />}
+        {activeView === 'xgstats' && <XGStats />}
       </main>
     </div>
   );
 }
 
 export default App;
-

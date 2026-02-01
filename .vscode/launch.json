@@ -1,0 +1,58 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "Debug API Server",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/football-stats-go-api/cmd/api",
+      "env": {
+        "SCRAPER_HEADLESS": "false",
+        "SCRAPER_DEBUG": "true"
+      },
+      "showLog": true,
+      "dlvFlags": [
+        "--check-go-version=false"
+      ],
+      "apiVersion": 2,
+      "args": [],
+      "cwd": "${workspaceFolder}/football-stats-go-api"
+    },
+    {
+      "name": "Debug API Server (Headless)",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/football-stats-go-api/cmd/api",
+      "env": {
+        "SCRAPER_HEADLESS": "true",
+        "SCRAPER_DEBUG": "true"
+      },
+      "showLog": true,
+      "dlvFlags": [
+        "--check-go-version=false"
+      ],
+      "apiVersion": 2,
+      "args": [],
+      "cwd": "${workspaceFolder}/football-stats-go-api"
+    },
+    {
+      "name": "Debug API Server (Production Mode)",
+      "type": "go",
+      "request": "launch",
+      "mode": "debug",
+      "program": "${workspaceFolder}/football-stats-go-api/cmd/api",
+      "env": {
+        "APP_ENV": "production",
+        "SCRAPER_HEADLESS": "true"
+      },
+      "dlvFlags": [
+        "--check-go-version=false"
+      ],
+      "apiVersion": 2,
+      "args": [],
+      "cwd": "${workspaceFolder}/football-stats-go-api"
+    }
+  ]
+}

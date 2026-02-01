@@ -9,11 +9,9 @@ import (
 
 // Config holds all application configuration
 type Config struct {
-	App       AppConfig
-	Server    ServerConfig
-	Database  DatabaseConfig
-	Ingestion IngestionConfig
-	Analytics AnalyticsConfig
+	App      AppConfig
+	Server   ServerConfig
+	Database DatabaseConfig
 }
 
 // AppConfig holds application-level settings
@@ -35,6 +33,7 @@ type ServerConfig struct {
 
 // DatabaseConfig holds DB connection settings
 type DatabaseConfig struct {
+	URL             string
 	Driver          string
 	Host            string
 	Port            string
@@ -47,25 +46,11 @@ type DatabaseConfig struct {
 	ConnMaxLifetime time.Duration
 }
 
-// IngestionConfig holds football data ingestion settings
-type IngestionConfig struct {
-	Provider       string
-	APIKey         string
-	BaseURL        string
-	PollInterval   time.Duration
-	RequestTimeout time.Duration
-}
-
-// AnalyticsConfig holds analysis-specific tuning parameters
-type AnalyticsConfig struct {
-	XGModel string
-}
-
 // Load loads configuration from environment variables
 func Load() *Config {
 	cfg := &Config{
 		App: AppConfig{
-			Name:        getEnv("APP_NAME", "football-analytics"),
+			Name:        getEnv("APP_NAME", "football-scraper"),
 			Environment: getEnv("APP_ENV", "development"),
 			Version:     getEnv("APP_VERSION", "0.1.0"),
 		},
@@ -78,6 +63,7 @@ func Load() *Config {
 			ShutdownTimeout: getDuration("SERVER_SHUTDOWN_TIMEOUT", 15*time.Second),
 		},
 		Database: DatabaseConfig{
+			URL:             getEnv("DATABASE_URL", ""),
 			Driver:          getEnv("DB_DRIVER", "postgres"),
 			Host:            getEnv("DB_HOST", "localhost"),
 			Port:            getEnv("DB_PORT", "5432"),
@@ -88,16 +74,6 @@ func Load() *Config {
 			MaxOpenConns:    getEnvAsInt("DB_MAX_OPEN_CONNS", 25),
 			MaxIdleConns:    getEnvAsInt("DB_MAX_IDLE_CONNS", 25),
 			ConnMaxLifetime: getDuration("DB_CONN_MAX_LIFETIME", 30*time.Minute),
-		},
-		Ingestion: IngestionConfig{
-			Provider:       getEnv("INGESTION_PROVIDER", "football-data"),
-			APIKey:         getEnv("INGESTION_API_KEY", ""),
-			BaseURL:        getEnv("INGESTION_BASE_URL", ""),
-			PollInterval:   getDuration("INGESTION_POLL_INTERVAL", 10*time.Minute),
-			RequestTimeout: getDuration("INGESTION_REQUEST_TIMEOUT", 10*time.Second),
-		},
-		Analytics: AnalyticsConfig{
-			XGModel: getEnv("ANALYTICS_XG_MODEL", "default"),
 		},
 	}
 

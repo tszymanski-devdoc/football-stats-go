@@ -1,87 +1,50 @@
 basePath: /api
 definitions:
-  example_hello_internal_domain.MatchData:
+  example_hello_internal_domain.DBXGStatFixture:
     properties:
       away_score:
         type: integer
+      away_shots:
+        items:
+          $ref: '#/definitions/example_hello_internal_domain.DBXGStatShot'
+        type: array
       away_team:
         type: string
+      away_xg:
+        type: number
+      date:
+        type: string
+      gameweek:
+        type: integer
       home_score:
         type: integer
+      home_shots:
+        items:
+          $ref: '#/definitions/example_hello_internal_domain.DBXGStatShot'
+        type: array
       home_team:
         type: string
+      home_xg:
+        type: number
       id:
-        type: string
-      league:
-        type: string
-      match_date:
-        type: string
-      season:
-        type: string
-    type: object
-  example_hello_internal_domain.MatchPrediction:
-    properties:
-      away_team:
-        type: string
-      away_win_probability:
-        type: number
-      confidence:
-        type: number
-      draw_probability:
-        type: number
-      home_team:
-        type: string
-      home_win_probability:
-        type: number
-      predicted_score:
-        type: string
-    type: object
-  example_hello_internal_domain.TeamStats:
-    properties:
-      avg_goals_conceded:
-        type: number
-      avg_goals_scored:
-        type: number
-      draws:
-        type: integer
-      goals_against:
-        type: integer
-      goals_for:
-        type: integer
-      losses:
-        type: integer
-      matches_played:
-        type: integer
-      team_name:
-        type: string
-      win_percentage:
-        type: number
-      wins:
         type: integer
     type: object
-  internal_api.AnalyzeTeamRequest:
+  example_hello_internal_domain.DBXGStatShot:
     properties:
-      matches:
-        items:
-          $ref: '#/definitions/example_hello_internal_domain.MatchData'
-        type: array
-      team_name:
+      is_goal:
+        type: boolean
+      minute:
+        type: integer
+      player_name:
         type: string
-    type: object
-  internal_api.PredictMatchRequest:
-    properties:
-      away_matches:
-        items:
-          $ref: '#/definitions/example_hello_internal_domain.MatchData'
-        type: array
-      away_team:
+      shot_type:
         type: string
-      home_matches:
-        items:
-          $ref: '#/definitions/example_hello_internal_domain.MatchData'
-        type: array
-      home_team:
-        type: string
+      x:
+        type: number
+      xg:
+        type: number
+      "y":
+        type: number
     type: object
   internal_api.Response:
     properties:
@@ -91,43 +54,47 @@ definitions:
       success:
         type: boolean
     type: object
+  internal_api.ScrapeRequest:
+    properties:
+      url:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact:
     email: support@footballstats.com
     name: API Support
-  description: A lightweight API for analyzing football data and predicting match
-    outcomes
+  description: A lightweight API for scraping football data from websites
   license:
     name: MIT
     url: https://opensource.org/licenses/MIT
   termsOfService: http://swagger.io/terms/
-  title: Football Stats Analysis API
+  title: Football Stats Scraper API
   version: "1.0"
 paths:
-  /analyze-team:
+  /scrape/xgstats:
     post:
       consumes:
       - application/json
-      description: Calculate comprehensive statistics for a team based on match data
+      description: Scrape xG statistics and shot map data from xgstat.com
       parameters:
-      - description: Team analysis request
+      - description: Scrape request with xgstat.com URL
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_api.AnalyzeTeamRequest'
+          $ref: '#/definitions/internal_api.ScrapeRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Team statistics
+          description: Scraped xG statistics and shot map data
           schema:
             allOf:
             - $ref: '#/definitions/internal_api.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/example_hello_internal_domain.TeamStats'
+                  $ref: '#/definitions/example_hello_internal_domain.DBXGStatFixture'
               type: object
         "400":
           description: Invalid request
@@ -137,45 +104,43 @@ paths:
           description: Method not allowed
           schema:
             $ref: '#/definitions/internal_api.Response'
-      summary: Analyze team statistics
+      summary: Scrape xG shot map data
       tags:
-      - analysis
-  /predict-match:
-    post:
+      - scraper
+  /xgstats:
+    get:
       consumes:
       - application/json
-      description: Predict the outcome of a match based on team statistics using Poisson
-        distribution
+      description: Retrieve saved xG statistics and shot map data from the database
       parameters:
-      - description: Match prediction request
-        in: body
-        name: request
+      - description: Fixture ID
+        in: query
+        name: id
         required: true
-        schema:
-          $ref: '#/definitions/internal_api.PredictMatchRequest'
+        type: integer
       produces:
       - application/json
       responses:
         "200":
-          description: Match prediction
+          description: Retrieved xG statistics
           schema:
             allOf:
             - $ref: '#/definitions/internal_api.Response'
             - properties:
                 data:
-                  $ref: '#/definitions/example_hello_internal_domain.MatchPrediction'
+                  $ref: '#/definitions/example_hello_internal_domain.DBXGStatFixture'
               type: object
         "400":
           description: Invalid request
           schema:
             $ref: '#/definitions/internal_api.Response'
-        "405":
-          description: Method not allowed
+        "404":
+          description: Fixture not found
           schema:
             $ref: '#/definitions/internal_api.Response'
-      summary: Predict match outcome
+      summary: Get xG statistics by fixture ID
       tags:
-      - prediction
+      - scraper
 schemes:
 - http
 - https

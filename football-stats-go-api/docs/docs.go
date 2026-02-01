@@ -23,9 +23,9 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
-        "/analyze-team": {
+        "/scrape/xgstats": {
             "post": {
-                "description": "Calculate comprehensive statistics for a team based on match data",
+                "description": "Scrape xG statistics and shot map data from xgstat.com",
                 "consumes": [
                     "application/json"
                 ],
@@ -33,23 +33,23 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "analysis"
+                    "scraper"
                 ],
-                "summary": "Analyze team statistics",
+                "summary": "Scrape xG shot map data",
                 "parameters": [
                     {
-                        "description": "Team analysis request",
+                        "description": "Scrape request with xgstat.com URL",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_api.AnalyzeTeamRequest"
+                            "$ref": "#/definitions/internal_api.ScrapeRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Team statistics",
+                        "description": "Scraped xG statistics and shot map data",
                         "schema": {
                             "allOf": [
                                 {
@@ -59,7 +59,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/example_hello_internal_domain.TeamStats"
+                                            "$ref": "#/definitions/example_hello_internal_domain.DBXGStatFixture"
                                         }
                                     }
                                 }
@@ -81,9 +81,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/predict-match": {
-            "post": {
-                "description": "Predict the outcome of a match based on team statistics using Poisson distribution",
+        "/xgstats": {
+            "get": {
+                "description": "Retrieve saved xG statistics and shot map data from the database",
                 "consumes": [
                     "application/json"
                 ],
@@ -91,23 +91,21 @@ const docTemplate = `{
                     "application/json"
                 ],
                 "tags": [
-                    "prediction"
+                    "scraper"
                 ],
-                "summary": "Predict match outcome",
+                "summary": "Get xG statistics by fixture ID",
                 "parameters": [
                     {
-                        "description": "Match prediction request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_api.PredictMatchRequest"
-                        }
+                        "type": "integer",
+                        "description": "Fixture ID",
+                        "name": "id",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Match prediction",
+                        "description": "Retrieved xG statistics",
                         "schema": {
                             "allOf": [
                                 {
@@ -117,7 +115,7 @@ const docTemplate = `{
                                     "type": "object",
                                     "properties": {
                                         "data": {
-                                            "$ref": "#/definitions/example_hello_internal_domain.MatchPrediction"
+                                            "$ref": "#/definitions/example_hello_internal_domain.DBXGStatFixture"
                                         }
                                     }
                                 }
@@ -130,8 +128,8 @@ const docTemplate = `{
                             "$ref": "#/definitions/internal_api.Response"
                         }
                     },
-                    "405": {
-                        "description": "Method not allowed",
+                    "404": {
+                        "description": "Fixture not found",
                         "schema": {
                             "$ref": "#/definitions/internal_api.Response"
                         }
@@ -141,130 +139,73 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "example_hello_internal_domain.MatchData": {
+        "example_hello_internal_domain.DBXGStatFixture": {
             "type": "object",
             "properties": {
                 "away_score": {
                     "type": "integer"
                 },
+                "away_shots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/example_hello_internal_domain.DBXGStatShot"
+                    }
+                },
                 "away_team": {
                     "type": "string"
+                },
+                "away_xg": {
+                    "type": "number"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "gameweek": {
+                    "type": "integer"
                 },
                 "home_score": {
                     "type": "integer"
                 },
+                "home_shots": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/example_hello_internal_domain.DBXGStatShot"
+                    }
+                },
                 "home_team": {
                     "type": "string"
+                },
+                "home_xg": {
+                    "type": "number"
                 },
                 "id": {
-                    "type": "string"
-                },
-                "league": {
-                    "type": "string"
-                },
-                "match_date": {
-                    "type": "string"
-                },
-                "season": {
-                    "type": "string"
-                }
-            }
-        },
-        "example_hello_internal_domain.MatchPrediction": {
-            "type": "object",
-            "properties": {
-                "away_team": {
-                    "type": "string"
-                },
-                "away_win_probability": {
-                    "type": "number"
-                },
-                "confidence": {
-                    "type": "number"
-                },
-                "draw_probability": {
-                    "type": "number"
-                },
-                "home_team": {
-                    "type": "string"
-                },
-                "home_win_probability": {
-                    "type": "number"
-                },
-                "predicted_score": {
-                    "type": "string"
-                }
-            }
-        },
-        "example_hello_internal_domain.TeamStats": {
-            "type": "object",
-            "properties": {
-                "avg_goals_conceded": {
-                    "type": "number"
-                },
-                "avg_goals_scored": {
-                    "type": "number"
-                },
-                "draws": {
-                    "type": "integer"
-                },
-                "goals_against": {
-                    "type": "integer"
-                },
-                "goals_for": {
-                    "type": "integer"
-                },
-                "losses": {
-                    "type": "integer"
-                },
-                "matches_played": {
-                    "type": "integer"
-                },
-                "team_name": {
-                    "type": "string"
-                },
-                "win_percentage": {
-                    "type": "number"
-                },
-                "wins": {
                     "type": "integer"
                 }
             }
         },
-        "internal_api.AnalyzeTeamRequest": {
+        "example_hello_internal_domain.DBXGStatShot": {
             "type": "object",
             "properties": {
-                "matches": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/example_hello_internal_domain.MatchData"
-                    }
+                "is_goal": {
+                    "type": "boolean"
                 },
-                "team_name": {
-                    "type": "string"
-                }
-            }
-        },
-        "internal_api.PredictMatchRequest": {
-            "type": "object",
-            "properties": {
-                "away_matches": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/example_hello_internal_domain.MatchData"
-                    }
+                "minute": {
+                    "type": "integer"
                 },
-                "away_team": {
+                "player_name": {
                     "type": "string"
                 },
-                "home_matches": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/example_hello_internal_domain.MatchData"
-                    }
-                },
-                "home_team": {
+                "shot_type": {
                     "type": "string"
+                },
+                "x": {
+                    "type": "number"
+                },
+                "xg": {
+                    "type": "number"
+                },
+                "y": {
+                    "type": "number"
                 }
             }
         },
@@ -279,6 +220,14 @@ const docTemplate = `{
                     "type": "boolean"
                 }
             }
+        },
+        "internal_api.ScrapeRequest": {
+            "type": "object",
+            "properties": {
+                "url": {
+                    "type": "string"
+                }
+            }
         }
     }
 }`
@@ -289,8 +238,8 @@ var SwaggerInfo = &swag.Spec{
 	Host:             "localhost:8080",
 	BasePath:         "/api",
 	Schemes:          []string{"http", "https"},
-	Title:            "Football Stats Analysis API",
-	Description:      "A lightweight API for analyzing football data and predicting match outcomes",
+	Title:            "Football Stats Scraper API",
+	Description:      "A lightweight API for scraping football data from websites",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

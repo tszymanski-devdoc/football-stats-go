@@ -1,35 +1,22 @@
-# Football Analysis API
+# Football Scraper API
 
-A lightweight Go API for analyzing football match data and predicting outcomes.
+A lightweight Go API for scraping football data from websites.
 
 ## Features
 
-- **Team Statistics Analysis** - Calculate win/loss records, goals, and performance metrics
-- **Match Prediction** - Predict match outcomes based on team statistics
-- **Head-to-Head Analysis** - Analyze historical matchups between teams
-- **Lightweight & Fast** - No database required, works with in-memory data
+- **Web Scraping** - Scrape data from football websites using headless Chrome
+- **Lightweight & Fast** - Simple and efficient scraping service
+- **REST API** - Easy to use HTTP endpoints
 
 ## API Endpoints
 
-### 1. Analyze Team Statistics
+### 1. Scrape xG Shot Map Data
 ```http
-POST /api/analyze-team
+POST /api/scrape/xgstats
 Content-Type: application/json
 
 {
-  "team_name": "Manchester United",
-  "matches": [
-    {
-      "id": "1",
-      "home_team": "Manchester United",
-      "away_team": "Liverpool",
-      "home_score": 2,
-      "away_score": 1,
-      "match_date": "2024-01-15T15:00:00Z",
-      "league": "Premier League",
-      "season": "2024"
-    }
-  ]
+  "url": "https://www.xgstat.com/competitions/premier-league/2025-2026/matches/arsenal-manchester-united-2026-01-24/advanced-analysis/shot-maps"
 }
 ```
 
@@ -38,21 +25,69 @@ Content-Type: application/json
 {
   "success": true,
   "data": {
-    "team_name": "Manchester United",
-    "matches_played": 10,
-    "wins": 6,
-    "draws": 2,
-    "losses": 2,
-    "goals_for": 18,
-    "goals_against": 12,
-    "win_percentage": 60.0,
-    "avg_goals_scored": 1.8,
-    "avg_goals_conceded": 1.2
+    "gameweek": 23,
+    "id": 12345,
+    "date": "2026-01-24T15:00:00Z",
+    "home_team": "Arsenal",
+    "away_team": "Manchester United",
+    "home_score": 2,
+    "away_score": 1,
+    "home_xg": 2.34,
+    "away_xg": 1.12,
+    "home_shots": [
+      {
+        "x": 88.5,
+        "y": 45.2,
+        "xg": 0.45,
+        "is_goal": true,
+        "shot_type": "Right Foot",
+        "player_name": "Bukayo Saka",
+        "minute": 23
+      }
+    ],
+    "away_shots": [
+      {
+        "x": 12.3,
+        "y": 50.1,
+        "xg": 0.32,
+        "is_goal": false,
+        "shot_type": "Left Foot",
+        "player_name": "Marcus Rashford",
+        "minute": 67
+      }
+    ]
   }
 }
 ```
 
-### 2. Predict Match Outcome
+### 2. Scrape Website (Legacy)
+```http
+POST /api/scrape
+Content-Type: application/json
+
+{
+  "url": "https://www.premierleague.com"
+}
+```
+
+**Response:**
+```json
+{
+  "success": true,
+  "data": {
+    "url": "https://www.premierleague.com",
+    "title": "Premier League - Official Website",
+    "content": "...",
+    "timestamp": "2026-01-26T10:30:00Z",
+    "metadata": {
+      "scraped_at": "2026-01-26T10:30:00Z",
+      "status": "success"
+    }
+  }
+}
+```
+
+### 3. Predict Match Outcome
 ```http
 POST /api/predict-match
 Content-Type: application/json
@@ -61,56 +96,9 @@ Content-Type: application/json
   "home_team": "Manchester United",
   "away_team": "Chelsea",
   "home_matches": [...],
-  "away_matches": [...]
-}
 ```
 
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "home_team": "Manchester United",
-    "away_team": "Chelsea",
-    "home_win_probability": 45.5,
-    "draw_probability": 25.0,
-    "away_win_probability": 29.5,
-    "predicted_score": "2-1",
-    "confidence": 75.0
-  }
-}
-```
-
-### 3. Head-to-Head Analysis
-```http
-POST /api/head-to-head
-Content-Type: application/json
-
-{
-  "team1": "Manchester United",
-  "team2": "Liverpool",
-  "matches": [...]
-}
-```
-
-**Response:**
-```json
-{
-  "success": true,
-  "data": {
-    "team1": "Manchester United",
-    "team2": "Liverpool",
-    "total_matches": 15,
-    "team1_wins": 6,
-    "team2_wins": 5,
-    "draws": 4,
-    "team1_avg_goals": 1.6,
-    "team2_avg_goals": 1.4
-  }
-}
-```
-
-### 4. Health Check
+### 2. Health Check
 ```http
 GET /health
 ```
@@ -121,7 +109,7 @@ GET /health
   "success": true,
   "data": {
     "status": "healthy",
-    "service": "football-analysis-api"
+    "service": "football-scraper-api"
   }
 }
 ```
@@ -130,6 +118,7 @@ GET /health
 
 ### Prerequisites
 - Go 1.24+
+- Chrome/Chromium (for headless scraping)
 
 ### Run Locally
 
@@ -143,24 +132,10 @@ GET /health
    # Health check
    curl http://localhost:8080/health
 
-   # Analyze team
-   curl -X POST http://localhost:8080/api/analyze-team \
+   # Scrape a website
+   curl -X POST http://localhost:8080/api/scrape \
      -H "Content-Type: application/json" \
-     -d '{
-       "team_name": "Arsenal",
-       "matches": [
-         {
-           "id": "1",
-           "home_team": "Arsenal",
-           "away_team": "Tottenham",
-           "home_score": 3,
-           "away_score": 1,
-           "match_date": "2024-01-15T15:00:00Z",
-           "league": "Premier League",
-           "season": "2024"
-         }
-       ]
-     }'
+     -d '{"url": "https://www.premierleague.com"}'
    ```
 
 ## Project Structure
@@ -173,8 +148,8 @@ football-stats-go-api/
 ├── internal/
 │   ├── domain/
 │   │   └── models.go            # Data models
-│   ├── analysis/
-│   │   └── service.go           # Analysis logic
+│   ├── scraper/
+│   │   └── service.go           # Scraper logic
 │   └── api/
 │       ├── handler.go           # HTTP handlers
 │       └── middleware.go        # HTTP middleware
@@ -187,7 +162,7 @@ football-stats-go-api/
 Configure via environment variables:
 
 ```bash
-export APP_NAME=football-analytics
+export APP_NAME=football-scraper
 export APP_ENV=development
 export SERVER_PORT=8080
 ```
@@ -198,21 +173,9 @@ export SERVER_PORT=8080
 ```python
 import requests
 
-# Analyze team
-response = requests.post('http://localhost:8080/api/analyze-team', json={
-    'team_name': 'Barcelona',
-    'matches': [
-        {
-            'id': '1',
-            'home_team': 'Barcelona',
-            'away_team': 'Real Madrid',
-            'home_score': 2,
-            'away_score': 1,
-            'match_date': '2024-01-15T15:00:00Z',
-            'league': 'La Liga',
-            'season': '2024'
-        }
-    ]
+# Scrape website
+response = requests.post('http://localhost:8080/api/scrape', json={
+    'url': 'https://www.premierleague.com'
 })
 
 print(response.json())
@@ -220,14 +183,11 @@ print(response.json())
 
 ### JavaScript Example
 ```javascript
-fetch('http://localhost:8080/api/predict-match', {
+fetch('http://localhost:8080/api/scrape', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
-    home_team: 'Liverpool',
-    away_team: 'Manchester City',
-    home_matches: [...],
-    away_matches: [...]
+    url: 'https://www.premierleague.com'
   })
 })
 .then(res => res.json())
@@ -239,7 +199,7 @@ fetch('http://localhost:8080/api/predict-match', {
 ### Cloud Run
 ```bash
 # Build and deploy
-gcloud run deploy football-analysis-api \
+gcloud run deploy football-scraper-api \
   --source . \
   --region us-central1 \
   --allow-unauthenticated
@@ -248,19 +208,20 @@ gcloud run deploy football-analysis-api \
 ### Using Dockerfile
 ```bash
 # Build
-docker build -t football-analysis-api .
+docker build -t football-scraper-api .
 
 # Run locally
-docker run -p 8080:8080 football-analysis-api
+docker run -p 8080:8080 football-scraper-api
 
 # Deploy to GCP
-gcloud builds submit --tag gcr.io/PROJECT_ID/football-analysis-api
-gcloud run deploy --image gcr.io/PROJECT_ID/football-analysis-api
+gcloud builds submit --tag gcr.io/PROJECT_ID/football-scraper-api
+gcloud run deploy --image gcr.io/PROJECT_ID/football-scraper-api
 ```
 
 ## Features
 
-✅ Lightweight - No database required  
+✅ Web Scraping - Extract data from websites  
+✅ Headless Chrome - Fast and reliable scraping  
 ✅ RESTful API - Clean JSON endpoints  
 ✅ CORS enabled - Works with web frontends  
 ✅ Request logging - Track all API calls  

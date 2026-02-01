@@ -1,3 +1,27 @@
+export interface XGStatShot {
+  x: number;
+  y: number;
+  xg: number;
+  is_goal: boolean;
+  shot_type: string;
+  player_name: string;
+  minute: number;
+}
+
+export interface XGStatFixture {
+  gameweek: number;
+  id: number;
+  date: string;
+  home_team: string;
+  away_team: string;
+  home_score: number;
+  away_score: number;
+  home_xg: number;
+  away_xg: number;
+  home_shots: XGStatShot[];
+  away_shots: XGStatShot[];
+}
+
 export interface MatchData {
   id: string;
   home_team: string;
