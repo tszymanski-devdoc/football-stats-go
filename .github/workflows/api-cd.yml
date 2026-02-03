@@ -74,11 +74,11 @@ jobs:
             --region ${{ secrets.GCP_REGION || 'us-central1' }} \
             --platform managed \
             --allow-unauthenticated \
-            --memory 512Mi \
-            --cpu 1 \
+            --memory 2Gi \
+            --cpu 2 \
             --max-instances 10 \
             --min-instances 0 \
-            --timeout 300 \
+            --timeout 600 \
             --port 8080 \
             --add-cloudsql-instances ${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:football-stats-go-db \
             --set-env-vars "APP_ENV=production,APP_NAME=football-stats-api,DATABASE_URL=postgresql://${{ secrets.DB_USER }}:${{ secrets.DB_PASSWORD }}@/postgres?host=/cloudsql/${{ secrets.GCP_PROJECT_ID }}:${{ secrets.GCP_REGION }}:football-stats-go-db&sslmode=disable" \

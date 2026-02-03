@@ -44,13 +44,20 @@ func main() {
 
 	log.Printf("Starting %s v%s in %s environment", cfg.App.Name, cfg.App.Version, cfg.App.Environment)
 
+	// Log important environment info for Cloud Run debugging
+	log.Printf("PORT: %s", cfg.Server.Port)
+	log.Printf("DATABASE_URL configured: %v", os.Getenv("DATABASE_URL") != "")
+	log.Printf("CHROME_PATH: %s", os.Getenv("CHROME_PATH"))
+
 	// Initialize database service
 	dbService, err := database.NewService(cfg)
 	if err != nil {
-		log.Fatalf("Failed to initialize database: %v", err)
+		log.Printf("Warning: Failed to initialize database: %v", err)
+		log.Println("Continuing without database connection...")
+		dbService = nil
+	} else {
+		log.Println("Database connection established")
 	}
-	defer dbService.Close()
-	log.Println("Database connection established")
 
 	// Initialize scraper service
 	scraperService := scraper.NewService()
@@ -100,6 +107,10 @@ func main() {
 	<-quit
 
 	log.Println("Shutting down server...")
+
+	if dbService != nil {
+		dbService.Close()
+	}
 
 	ctx, cancel := context.WithTimeout(context.Background(), cfg.Server.ShutdownTimeout)
 	defer cancel()

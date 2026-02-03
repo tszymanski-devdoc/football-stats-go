@@ -69,10 +69,12 @@ func (h *Handler) ScrapeXGStats(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Save to database
-	if err := h.databaseService.SaveXGStatFixture(data); err != nil {
-		writeError(w, http.StatusInternalServerError, "Failed to save data: "+err.Error())
-		return
+	// Save to database if service is available
+	if h.databaseService != nil {
+		if err := h.databaseService.SaveXGStatFixture(data); err != nil {
+			writeError(w, http.StatusInternalServerError, "Failed to save data: "+err.Error())
+			return
+		}
 	}
 
 	writeSuccess(w, data)
