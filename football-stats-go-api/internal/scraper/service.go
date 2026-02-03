@@ -66,6 +66,14 @@ func (s *Service) ScrapeXGStatFixture(url string) (*domain.DBXGStatFixture, erro
 		chromedp.WindowSize(1920, 1080),
 	}
 
+	// Use system Chrome if available (Cloud Run)
+	if chromePath := os.Getenv("CHROME_PATH"); chromePath != "" {
+		opts = append(opts, chromedp.ExecPath(chromePath))
+		if s.debug {
+			log.Printf("🔧 Using Chrome at: %s", chromePath)
+		}
+	}
+
 	if s.headless {
 		opts = append(opts, chromedp.Headless)
 	} else {
